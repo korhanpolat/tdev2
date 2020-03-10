@@ -11,7 +11,7 @@ setuptools.setup(
     description='Evaluation toolbox for Term Discovery systems',
     version=tdev2.__version__,
     long_description=open('README.md').read(),
-    url='https://github.com/bootphon/tdev2',
+    url='https://github.com/korhanpolat/tdev2',
     license='LICENSE.txt',
 
     # python package dependencies
