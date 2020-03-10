@@ -13,6 +13,12 @@ import intervaltree
 
 from collections import defaultdict
 
+import yaml
+
+with open('../config.yml','r') as f: 
+    confs = yaml.safe_load(f)
+ovth=confs['overlap_th']
+
 
 class Gold():
     def __init__(self, vad_path=None, wrd_path=None, phn_path=None):
@@ -201,7 +207,7 @@ class Gold():
         # more than 30 ms or more than 50% of phone.
         for interval in _cov_int:
             int_ov, time = overlap(on, off, interval)
-            if round(int_ov, 4) >= 0.50 or round(time, 4) >= 0.03:
+            if round(int_ov, 4) >= 0.50 or round(time, 4) >= ovth:
                 cov_trs.append(
                     (interval[0], interval[1],
                      transcription[(fname, interval[0], interval[1])]))
