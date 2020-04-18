@@ -15,7 +15,7 @@ from collections import defaultdict
 
 import yaml
 
-with open('../config.yml','r') as f: 
+with open('config.yml','r') as f: 
     confs = yaml.safe_load(f)
 ovth=confs['overlap_th']
 
