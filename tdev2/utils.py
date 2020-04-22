@@ -14,12 +14,29 @@
                    ov=1.0)
 """
 
-import yaml
 import os
+from tdev2 import config
 
-with open('config.yml','r') as f: confs = yaml.safe_load(f)
 
-ovth=confs['overlap_th']
+ovth = config.overlap_th
+
+
+def write_disc_class_file(dedups_, nodes_, outfile):
+    # creating the output class used by eval
+    t_ = ''
+    for n, class_ in enumerate(dedups_, start=1):
+        t_ += 'Class {}\n'.format(n)
+        for element in class_:
+            file_, start_, end_ = nodes_[element]
+            t_ += '{} {:.2f} {:.2f}\n'.format(file_, start_, end_)
+        t_ += '\n'
+
+    # stdout or save to file file
+    if outfile is None:
+        print(t_)
+    else:
+        with open(outfile, 'w') as output:
+            output.write(t_) 
 
 
 
@@ -43,21 +60,8 @@ def zr2tde(nodesfile, dedupsfile, outfile):
             except:
                 raise
 
-    # creating the output class used by eval
-    t_ = ''
-    for n, class_ in enumerate(dedups_, start=1):
-        t_ += 'Class {}\n'.format(n)
-        for element in class_:
-            file_, start_, end_ = nodes_[element]
-            t_ += '{} {:.2f} {:.2f}\n'.format(file_, start_, end_)
-        t_ += '\n'
+    write_disc_class_file(dedups_, nodes_, outfile)
 
-    # stdout or save to file file
-    if outfile is None:
-        print(t_)
-    else:
-        with open(outfile, 'w') as output:
-            output.write(t_) 
 
 
 def zrexp2tde(exp_path):
@@ -68,6 +72,26 @@ def zrexp2tde(exp_path):
     zr2tde(nodesfile, dedupsfile, outfile)
     
     return outfile 
+
+
+
+def sdtw2tde(postdisc_path):
+
+    import pandas as pd
+    import pickle 
+
+    with open(os.path.join(postdisc_path,'clusters.pkl'),'rb') as f: 
+        dedups_ = pickle.load(f)
+
+    nodes_df = pd.read_pickle(os.path.join(postdisc_path,'nodes.pkl'))
+    subset = nodes_df[['filename','start','end']]
+    nodes_ = [tuple(x) for x in subset.to_numpy()]
+
+    outfile = os.path.join(postdisc_path,'master_graph.class')
+
+    write_disc_class_file(dedups_, nodes_, outfile)
+
+    return outfile
 
 
 def check_boundary(gold_times, disc_times):

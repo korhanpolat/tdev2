@@ -11,7 +11,7 @@ from tdev2.measures.token_type import *
 from tdev2.readers.gold_reader import *
 from tdev2.readers.disc_reader import *
 
-from tdev2.utils import zrexp2tde
+from tdev2.utils import zrexp2tde, sdtw2tde
 import json
 
 def prf2dict(dct, measurename, obj):
@@ -50,6 +50,14 @@ def compute_scores(gold, disc, measures=[]):
         coverage = Coverage(gold, disc)
         coverage.compute_coverage()
         scores['coverage'] = coverage.coverage
+
+        
+    if len(measures) == 0 or "coverageNS" in measures:
+        print('Computing Coverage No Single...')
+        coverage = Coverage_NoSingleton(gold, disc)
+        coverage.compute_coverage()
+        scores['coverageNS'] = coverage.coverage
+
         
     if len(measures) == 0 or "ned" in measures:
         print('Computing NED...')
@@ -85,14 +93,17 @@ def main():
     """)
     parser.add_argument('exp_path', metavar='experiment_fullpath', type=str)
     parser.add_argument('corpus', metavar='language', type=str, 
-                        choices=['phoenix'],
+                        choices=['phoenix','phoenixClean'],
                         help='Choose the corpus you want to evaluate')
     parser.add_argument('--measures', '-m',
                         nargs='*',
                         default=[],
                         choices=['boundary', 'grouping', 
-                                 'token/type', 'coverage',
+                                 'token/type', 'coverage','coverageNS',
                                  'ned'])
+    parser.add_argument('UTDsys', type=str, choices=['zr17','sdtw'],
+                        help="type of UTD system")
+
     parser.add_argument('output', type=str,
                         help="path to .json file in which to write the output")
 
@@ -111,7 +122,10 @@ def main():
                 phn_path=phn_path)
 
     print('Generating discovered -class- file')
-    disc_clsfile = zrexp2tde(args.exp_path)
+    if args.UTDsys == 'zr17':
+        disc_clsfile = zrexp2tde(args.exp_path)
+    elif args.UTDsys == 'sdtw':
+        disc_clsfile = sdtw2tde(args.exp_path)
 
     print('Reading discovered classes')
     disc = Disc(disc_clsfile, gold) 

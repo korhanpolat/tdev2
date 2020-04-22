@@ -13,12 +13,8 @@ import intervaltree
 
 from collections import defaultdict
 
-import yaml
-
-with open('config.yml','r') as f: 
-    confs = yaml.safe_load(f)
-ovth=confs['overlap_th']
-
+from tdev2 import config
+ovth = config.overlap_th
 
 class Gold():
     def __init__(self, vad_path=None, wrd_path=None, phn_path=None):
