@@ -52,14 +52,12 @@ class Coverage(Measure):
 from tdev2 import config
 #excluded_units = ['SIL','__ON__','__OFF__','__EMOTION__','SPN']
 excluded_units = config.excluded_units
-
+discoverable_th = config.discoverable_th    
 
 class Coverage_NoSingleton(Measure):
     def __init__(self, gold, disc, output_folder=None):
         self.metric_name = "coverage_nosingleton"
         self.output_folder = output_folder
-
-
 
         phones = []
         for fname in gold.phones:
@@ -68,8 +66,8 @@ class Coverage_NoSingleton(Measure):
                 if (ph not in excluded_units)])
             
         unique, counts = np.unique(phones, return_counts=True)
-        discoverable_units = unique[counts>1] # unique set of labels
-        n_discoverable = np.sum(counts[counts>1]) # total number of their occurences
+        discoverable_units = unique[counts>discoverable_th] # unique set of labels
+        n_discoverable = np.sum(counts[counts>discoverable_th]) # total number of their occurences
 
         self.covered_phn = set(
             (fname, phn_on, phn_off, phn)
@@ -80,7 +78,19 @@ class Coverage_NoSingleton(Measure):
 
         self.n_phones = n_discoverable
 
+        # compute in terms of #frames, instead of #units
+        self.total_covered = 0
+        for (fname,phn_on, phn_off, phn) in self.covered_phn:
+            self.total_covered += phn_off - phn_on
+        
+        self.total_discoverable = 0
+        for fname in gold.phones:
+            for on, off, ph in gold.phones[fname]: 
+                if ((phn not in excluded_units) and (phn in discoverable_units)):
+                    self.total_discoverable += (off-on) 
+
         self.coverage = 0
+        self.coverage_frames = 0
 
 
     def compute_coverage(self):
@@ -94,6 +104,7 @@ class Coverage_NoSingleton(Measure):
                                  the overall number of phones in the corpus
         """
         self.coverage = len(self.covered_phn) / self.n_phones
+        self.coverage_frames = self.total_covered / self.total_discoverable
 
     def write_score(self):
         if not self.coverage:

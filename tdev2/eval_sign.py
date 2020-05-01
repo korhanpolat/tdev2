@@ -11,8 +11,11 @@ from tdev2.measures.token_type import *
 from tdev2.readers.gold_reader import *
 from tdev2.readers.disc_reader import *
 
-from tdev2.utils import zrexp2tde, sdtw2tde
+from tdev2.utils import zrexp2tde, sdtw2tde, narrow_gold
 import json
+
+
+
 
 def prf2dict(dct, measurename, obj):
     dct[measurename + '_P'] = obj.precision
@@ -22,7 +25,7 @@ def prf2dict(dct, measurename, obj):
     return dct
 
 
-def compute_scores(gold, disc, measures=[]):
+def compute_scores(gold, disc, measures=[], njobs=1):
     scores = dict()
     
     # Launch evaluation of each metric
@@ -34,7 +37,7 @@ def compute_scores(gold, disc, measures=[]):
         
     if len(measures) == 0 or "grouping" in measures:
         print('Computing Grouping...')
-        grouping = Grouping(disc)
+        grouping = Grouping(disc,  njobs=njobs)
         grouping.compute_grouping()
         scores = prf2dict(scores, 'grouping', grouping)    
         
@@ -57,6 +60,7 @@ def compute_scores(gold, disc, measures=[]):
         coverage = Coverage_NoSingleton(gold, disc)
         coverage.compute_coverage()
         scores['coverageNS'] = coverage.coverage
+        scores['coverageNS_f'] = coverage.coverage_frames
 
         
     if len(measures) == 0 or "ned" in measures:
@@ -106,6 +110,10 @@ def main():
 
     parser.add_argument('output', type=str,
                         help="path to .json file in which to write the output")
+    parser.add_argument('--njobs', '-n',
+                        default=1,
+                        type=int,
+                        help="number of cpus to be used in grouping")   
 
     args = parser.parse_args()
 
@@ -121,6 +129,10 @@ def main():
     gold = Gold(wrd_path=wrd_path, 
                 phn_path=phn_path)
 
+    # select only the included files from gold 
+    gold = narrow_gold(gold, args.exp_path)
+
+
     print('Generating discovered -class- file')
     if args.UTDsys == 'zr17':
         disc_clsfile = zrexp2tde(args.exp_path)
@@ -134,7 +146,7 @@ def main():
     output = args.output
 
     print('Computing scores..')
-    scores = compute_scores(gold, disc)
+    scores = compute_scores(gold, disc, njobs=args.njobs)
     scores['n_clus'] = len(disc.clusters)
     scores['n_node'] = len(disc.intervals)
 

@@ -119,7 +119,8 @@ class Disc():
         self.intervals = list(intervals)
 
         print("Discovered Class file read\n")
-        print("{} unique intervals found".format(len(self.intervals)))
+        print("{} unique intervals, {} clusters with {} nodes found".format(
+            len(self.intervals), len(self.clusters), sum([len(x) for x in self.clusters])))
 
     def read_intervals_tree(self):
         """ Read discovered intervals as interval tree"""

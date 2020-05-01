@@ -85,13 +85,40 @@ def sdtw2tde(postdisc_path):
 
     nodes_df = pd.read_pickle(os.path.join(postdisc_path,'nodes.pkl'))
     subset = nodes_df[['filename','start','end']]
-    nodes_ = [tuple(x) for x in subset.to_numpy()]
+    # very important, in order to let index start from 1
+    nodes_ = [None] + [tuple(x) for x in subset.to_numpy()] 
 
     outfile = os.path.join(postdisc_path,'master_graph.class')
 
     write_disc_class_file(dedups_, nodes_, outfile)
 
     return outfile
+
+
+
+def select_included_seqs_from_gold(seqs_included, gold ):
+    # select boundaries    
+    allkeys = gold.boundaries[0].keys()
+    for key in list(allkeys):
+        if key not in seqs_included:
+            for i in range(2):
+                gold.boundaries[i].pop(key)
+    
+    # select phones
+    gold.phones = { name: gold.phones[name] for name in seqs_included }
+    
+    # select words
+    gold.words = { name: gold.words[name] for name in seqs_included }
+    
+    return gold
+
+
+def narrow_gold(gold, seqfiledir):
+
+    with open(os.path.join(seqfiledir, 'seq_names.txt'), 'r') as f: 
+        seqs_included = f.read().split('\n')
+
+    return select_included_seqs_from_gold(seqs_included, gold )
 
 
 def check_boundary(gold_times, disc_times):

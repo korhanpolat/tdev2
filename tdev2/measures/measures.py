@@ -28,7 +28,7 @@ class Measure():
             raise ValueError('Attempting to compute fscore when precision'
                              ' and recall are not yet computed!')
         return 2 * (self.precision * self.recall) / (
-            self.precision + self.recall)
+            self.precision + self.recall + 0.001)
 
     def write_score(self):
         if self.fscore is None:

@@ -18,6 +18,7 @@ class Grouping(Measure):
         self.gold_pairs = set()
         self.found_types = set()
         self.gold_types = set()
+        print('Number of grouping jobs: {}'.format(njobs))
 
     @property
     def precision(self):
