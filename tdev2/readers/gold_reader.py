@@ -13,11 +13,18 @@ import intervaltree
 
 from collections import defaultdict
 
-from tdev2 import config
-ovth = config.overlap_th
+
+from tdev2.utils import read_config
+# from tdev2 import config
+# ovth = config.overlap_th
+
+# with open(config_pth, 'r') as f:
+#     conf = json.load(f)
+
+
 
 class Gold():
-    def __init__(self, vad_path=None, wrd_path=None, phn_path=None):
+    def __init__(self, vad_path=None, wrd_path=None, phn_path=None, **kwargs):
         """Object representing the gold.
 
         Contains the VAD,the word alignement and the phone alignment. The
@@ -25,6 +32,9 @@ class Gold():
         interval tree of the silences can also be stored.
 
         """
+        read_config(kwargs['config_file'])
+        print(kwargs['config_file'])
+
         # paths
         self.vad_path = vad_path
         self.wrd_path = wrd_path

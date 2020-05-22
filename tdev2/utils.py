@@ -15,10 +15,23 @@
 """
 
 import os
-from tdev2 import config
+import json
+# from tdev2 import config
+# ovth = config.overlap_th
 
 
-ovth = config.overlap_th
+def read_config(config_file):
+    global ovth, excluded_units, discoverable_th
+
+    with open(config_file, 'r') as f:
+        conf = json.load(f)
+
+    ovth = conf['overlap_th']
+    excluded_units = conf['excluded_units']
+    discoverable_th = conf['discoverable_th']
+
+    print('*** Config file read, ovth {} ***'.format(ovth))
+    return conf
 
 
 def write_disc_class_file(dedups_, nodes_, outfile):
@@ -152,6 +165,7 @@ def check_boundary(gold_times, disc_times):
     elif ((gold_dur >= 2*ovth and ov_time < ovth) or
           (gold_dur < 2*ovth and ov < 0.5)):
         return False
+
 
 def overlap(disc, gold):
     ov = (min(disc[1], gold[1]) - max(disc[0], gold[0])) \

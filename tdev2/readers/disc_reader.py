@@ -120,7 +120,7 @@ class Disc():
 
         print("Discovered Class file read\n")
         print("{} unique intervals, {} clusters with {} nodes found".format(
-            len(self.intervals), len(self.clusters), sum([len(x) for x in self.clusters])))
+            len(self.intervals), len(self.clusters), sum([len(x) for k,x in self.clusters.items()])))
 
     def read_intervals_tree(self):
         """ Read discovered intervals as interval tree"""
@@ -144,11 +144,11 @@ class Disc():
         # Check if first and last phones are discovered
         keep_first = check_boundary(
             (covered[0][0], covered[0][1]),
-            (disc_on, covered[0][1]))
+            (disc_on, disc_off))
 
         keep_last = check_boundary(
             (covered[-1][0], covered[-1][1]),
-            (covered[-1][0], disc_off))
+            (disc_on, disc_off))
 
         if keep_first:
             token_ngram = [

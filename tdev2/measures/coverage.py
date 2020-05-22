@@ -49,15 +49,21 @@ class Coverage(Measure):
 
 
 
-from tdev2 import config
+# from tdev2 import config
 #excluded_units = ['SIL','__ON__','__OFF__','__EMOTION__','SPN']
-excluded_units = config.excluded_units
-discoverable_th = config.discoverable_th    
+
+from tdev2.utils import read_config
 
 class Coverage_NoSingleton(Measure):
-    def __init__(self, gold, disc, output_folder=None):
+    def __init__(self, gold, disc, output_folder=None, config_file=None):
         self.metric_name = "coverage_nosingleton"
         self.output_folder = output_folder
+        self.config_file = config_file
+        
+        # read config params
+        conf = read_config(config_file)
+        excluded_units = conf['excluded_units']
+        discoverable_th = conf['discoverable_th']
 
         phones = []
         for fname in gold.phones:

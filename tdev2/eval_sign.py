@@ -13,6 +13,7 @@ from tdev2.readers.disc_reader import *
 
 from tdev2.utils import zrexp2tde, sdtw2tde, narrow_gold
 import json
+import traceback
 
 
 
@@ -25,7 +26,7 @@ def prf2dict(dct, measurename, obj):
     return dct
 
 
-def compute_scores(gold, disc, measures=[], njobs=1):
+def compute_scores(gold, disc, measures=[], **kwargs):
     scores = dict()
     
     # Launch evaluation of each metric
@@ -37,7 +38,7 @@ def compute_scores(gold, disc, measures=[], njobs=1):
         
     if len(measures) == 0 or "grouping" in measures:
         print('Computing Grouping...')
-        grouping = Grouping(disc,  njobs=njobs)
+        grouping = Grouping(disc,  njobs=kwargs['njobs'])
         grouping.compute_grouping()
         scores = prf2dict(scores, 'grouping', grouping)    
         
@@ -57,10 +58,10 @@ def compute_scores(gold, disc, measures=[], njobs=1):
         
     if len(measures) == 0 or "coverageNS" in measures:
         print('Computing Coverage No Single...')
-        coverage = Coverage_NoSingleton(gold, disc)
-        coverage.compute_coverage()
-        scores['coverageNS'] = coverage.coverage
-        scores['coverageNS_f'] = coverage.coverage_frames
+        coverageNS = Coverage_NoSingleton(gold, disc, config_file=kwargs['config_file'])
+        coverageNS.compute_coverage()
+        scores['coverageNS'] = coverageNS.coverage
+        scores['coverageNS_f'] = coverageNS.coverage_frames
 
         
     if len(measures) == 0 or "ned" in measures:
@@ -69,7 +70,37 @@ def compute_scores(gold, disc, measures=[], njobs=1):
         ned.compute_ned()
         scores['ned'] = ned.ned
     
+    scores['n_clus'] = len(disc.clusters)
+    scores['n_node'] = sum([len(x) for k,x in disc.clusters.items()])
+
     return scores
+
+
+def try_compute_scores(gold, disc, measures=[], **kwargs):
+    
+    scores = dict()
+
+    if len(measures) == 0: 
+        measures = ['boundary', 'grouping', 'token/type', 
+                    'coverage','coverageNS', 'ned']
+
+    for measure in measures:
+        try: 
+            tmp_score = compute_scores(gold, disc, measures=measure, **kwargs)
+            scores = {**scores, **tmp_score}
+
+        except Exception as exc:
+            print('WARNING: Computing {} scores failed ! '.format(measure))
+            print(traceback.format_exc())
+            print(exc)
+ 
+
+    # round decimals
+    for k,v in scores.items(): scores[k] = round(v,4)
+
+    return scores
+    
+
 
 
 def main():
@@ -96,27 +127,37 @@ def main():
     ...
     """)
     parser.add_argument('exp_path', metavar='experiment_fullpath', type=str)
+
     parser.add_argument('corpus', metavar='language', type=str, 
-                        choices=['phoenix','phoenixClean'],
+                        choices=['phoenix','phoenixClean', 'mdgsClean_right', 'mdgsClean'],
                         help='Choose the corpus you want to evaluate')
+
     parser.add_argument('--measures', '-m',
                         nargs='*',
                         default=[],
                         choices=['boundary', 'grouping', 
                                  'token/type', 'coverage','coverageNS',
                                  'ned'])
+
     parser.add_argument('UTDsys', type=str, choices=['zr17','sdtw'],
                         help="type of UTD system")
 
     parser.add_argument('output', type=str,
                         help="path to .json file in which to write the output")
+
     parser.add_argument('--njobs', '-n',
                         default=1,
                         type=int,
                         help="number of cpus to be used in grouping")   
 
+    parser.add_argument('--config_file', '-cnf',
+                        default='../../../config.json',
+                        type=str,
+                        help="path to .json file from which get the configuration")   
+
     args = parser.parse_args()
 
+    kwargs = {'njobs': args.njobs, 'config_file': args.config_file}
     # load the corpus alignments
     wrd_path = pkg_resources.resource_filename(
             pkg_resources.Requirement.parse('tdev2'),
@@ -127,7 +168,8 @@ def main():
  
     print('Reading gold')
     gold = Gold(wrd_path=wrd_path, 
-                phn_path=phn_path)
+                phn_path=phn_path,
+                **kwargs)
 
     # select only the included files from gold 
     gold = narrow_gold(gold, args.exp_path)
@@ -142,13 +184,11 @@ def main():
     print('Reading discovered classes')
     disc = Disc(disc_clsfile, gold) 
 
-    measures = args.measures
     output = args.output
 
     print('Computing scores..')
-    scores = compute_scores(gold, disc, njobs=args.njobs)
-    scores['n_clus'] = len(disc.clusters)
-    scores['n_node'] = len(disc.intervals)
+    scores = try_compute_scores(gold, disc, args.measures, **kwargs)
+
 
     for k,v in scores.items(): print('{}:\t{:.4f}'.format(k,v))
 
