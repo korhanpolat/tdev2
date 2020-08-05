@@ -39,7 +39,7 @@ class Disc():
         self.clusters = None
         self.intervals = None
         if gold:
-            self.gold_phn = gold.phones
+            self.gold_phn = gold.words
         else:
             print("Warning: discovered file is read"
                   " without gold, so no transcription is given")
@@ -106,7 +106,11 @@ class Disc():
                         " in discovered classes".format(class_number))
                     #assert len(classes) > 0, (
                     #        'class {} if empty'.format(class_number))
-                    if len(classes) > 0:
+                    
+
+                    # changed here too
+                    # if len(classes) > 0:
+                    if len(classes) > 1:
                         discovered[class_number] = classes
 
                     # re-initialize classes
@@ -114,6 +118,13 @@ class Disc():
                 else:
                     raise ValueError('Line in discovered classes has wrong'
                             ' format\n {}\n'.format(line))
+
+        # # I added here, not to count intervals that belong to singleton clusters
+        # # count only the intervals from clusters of length > 1
+        # for class_number, classes in discovered.items():
+        #     for (fname, disc_on, disc_off, token_ngram, ngram) in classes:
+        #         intervals.add( (fname, disc_on, disc_off, token_ngram, ngram) )
+
 
         self.clusters = discovered
         self.intervals = list(intervals)

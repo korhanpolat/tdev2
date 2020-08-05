@@ -91,8 +91,8 @@ class Coverage_NoSingleton(Measure):
         
         self.total_discoverable = 0
         for fname in gold.phones:
-            for on, off, ph in gold.phones[fname]: 
-                if ((phn not in excluded_units) and (phn in discoverable_units)):
+            for on, off, phn in gold.phones[fname]: 
+                if ((len(phn )>0) and (phn not in excluded_units) and (phn in discoverable_units)):
                     self.total_discoverable += (off-on) 
 
         self.coverage = 0

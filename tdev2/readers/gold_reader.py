@@ -32,7 +32,7 @@ class Gold():
         interval tree of the silences can also be stored.
 
         """
-        read_config(kwargs['config_file'])
+        self.conf = read_config(kwargs['config_file'])
         print(kwargs['config_file'])
 
         # paths

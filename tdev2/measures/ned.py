@@ -4,9 +4,10 @@ import editdistance
 from .measures import Measure
 from itertools import combinations
 
+from tdev2.utils import read_config
 
 class Ned(Measure):
-    def __init__(self, disc, output_folder=None):
+    def __init__(self, disc, config_file, output_folder=None):
         self.metric_name = "ned"
         self.output_folder = output_folder
         self.disc = disc.clusters
@@ -15,10 +16,14 @@ class Ned(Measure):
         self.n_pairs = None
         self.ned = None
 
-    @staticmethod
-    def pairwise_ned(s1, s2):
-        s1 = tuple(phn for phn in s1 if phn != "SIL")
-        s2 = tuple(phn for phn in s2 if phn != "SIL")
+        # read config params
+        conf = read_config(config_file)
+        self.excluded_units = conf['excluded_units']
+
+    # @staticmethod
+    def pairwise_ned(self, s1, s2):
+        s1 = tuple(phn for phn in s1 if phn not in self.excluded_units)
+        s2 = tuple(phn for phn in s2 if phn not in self.excluded_units)
         if max(len(s1), len(s2)) > 0:
             return float(editdistance.eval(s1, s2)) / max(len(s1), len(s2))
         else:
@@ -46,7 +51,10 @@ class Ned(Measure):
 
         # get number of pairs and ned value
         self.n_pairs = len(overall_ned)
-        self.ned = np.mean(overall_ned)
+        if self.n_pairs > 0:
+            self.ned = np.mean(overall_ned)
+        else: 
+            self.ned = 1.
 
     def write_score(self):
         if self.ned is None:

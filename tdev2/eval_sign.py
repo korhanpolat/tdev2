@@ -14,8 +14,15 @@ from tdev2.readers.disc_reader import *
 from tdev2.utils import zrexp2tde, sdtw2tde, narrow_gold
 import json
 import traceback
+from os.path import join
 
-
+cols = [
+            'ned', 'coverage', 'coverageNS', 'coverageNS_f', 
+            'grouping_F', 'grouping_P', 'grouping_R', 
+            'token_F', 'token_P', 'token_R', 
+            'type_F', 'type_P', 'type_R',
+            'boundary_F', 'boundary_P', 'boundary_R'
+        ]
 
 
 def prf2dict(dct, measurename, obj):
@@ -66,7 +73,7 @@ def compute_scores(gold, disc, measures=[], **kwargs):
         
     if len(measures) == 0 or "ned" in measures:
         print('Computing NED...')
-        ned = Ned(disc)
+        ned = Ned(disc, config_file=kwargs['config_file'])
         ned.compute_ned()
         scores['ned'] = ned.ned
     
@@ -78,7 +85,10 @@ def compute_scores(gold, disc, measures=[], **kwargs):
 
 def try_compute_scores(gold, disc, measures=[], **kwargs):
     
-    scores = dict()
+    # scores = dict()
+    scores = {k:0.0 for k in cols}
+    scores['ned'] = 1
+
 
     if len(measures) == 0: 
         measures = ['boundary', 'grouping', 'token/type', 
@@ -96,7 +106,9 @@ def try_compute_scores(gold, disc, measures=[], **kwargs):
  
 
     # round decimals
-    for k,v in scores.items(): scores[k] = round(v,4)
+    for k,v in scores.items(): 
+        if k in cols:
+            scores[k] = round(v*100,2) 
 
     return scores
     
@@ -129,7 +141,7 @@ def main():
     parser.add_argument('exp_path', metavar='experiment_fullpath', type=str)
 
     parser.add_argument('corpus', metavar='language', type=str, 
-                        choices=['phoenix','phoenixClean', 'mdgsClean_right', 'mdgsClean'],
+                        choices=['phoenix','phoenixClean', 'mdgsClean_right', 'mdgsClean_both'],
                         help='Choose the corpus you want to evaluate')
 
     parser.add_argument('--measures', '-m',
@@ -189,12 +201,15 @@ def main():
     print('Computing scores..')
     scores = try_compute_scores(gold, disc, args.measures, **kwargs)
 
-
-    for k,v in scores.items(): print('{}:\t{:.4f}'.format(k,v))
+    # for k,v in scores.items(): print('{}:\t{:.4f}'.format(k,v))
+    scores['exp_path'] = args.exp_path
 
     with open(args.output, 'w') as file:
         json.dump(scores, file)
     
+    # save clusters info
+    with open(join(args.exp_path, 'clusters_tde.json'),'w') as f:
+        json.dump(disc.clusters, f)
 
 if __name__ == "__main__": 
     main()
